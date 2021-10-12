@@ -1,0 +1,109 @@
+---
+title: "Computer Workshop 2"
+author: "Sean Longman"
+date: "12/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+```{r library}
+library(haven)
+library(tidyverse)
+```
+
+
+```{r load data}
+sbp1_dataset <- read_sav("Regression Modelling Data/sbp1.sav")
+```
+
+```{r fit model}
+model <- lm(formula = SBP ~ AGE, data = sbp1_dataset)
+```
+
+```{r get residuals}
+res <- resid(model)
+```
+
+```{r plot fitted vs residual}
+plot(fitted(model), res)
+```
+
+```{r plot cumulative probs}
+probDist <- pnorm(scale(res))
+{plot(ppoints(length(scale(res))), sort(probDist),
+     xlab = "Observed Cum Prob", ylab = "Expected Cum Prob")
+abline(a=0,b=1)}
+```
+
+```{r plot hist of res}
+{hist(scale(res), freq = FALSE, breaks=40)
+curve(dnorm,add=TRUE)}
+```
+
+```{r remove outlier}
+sbp1_dataset_update <- sbp1_dataset[(sbp1_dataset$SBP <= 200), ]
+```
+
+
+```{r fit updated model}
+model2 <- lm(formula = SBP ~ AGE, data = sbp1_dataset_update)
+```
+
+```{r get updated residuals}
+res2 <- resid(model2)
+```
+
+```{r plot updated fitted vs residual}
+plot(fitted(model2), res2)
+```
+
+```{r plot new cumulative probs}
+probDist2 <- pnorm(scale(res2))
+{plot(ppoints(length(scale(res2))), sort(probDist2),
+     xlab = "Observed Cum Prob", ylab = "Expected Cum Prob")
+abline(a=0,b=1)} #have to wrap this in {} to run as one code block else you get an error - damn markdown files
+```
+
+```{r plot hist of res}
+{hist(scale(res2), freq = FALSE, breaks=40)
+curve(dnorm,add=TRUE)}
+```
+```{r model coefficients}
+model$coefficients
+```
+```{r model2 coefficients}
+model2$coefficients
+```
+
+```{r load life dataset}
+life_dataset <- read_sav("Regression Modelling Data/life.sav")
+```
+
+```{r fit life model}
+life_model <- lm(formula = LEXPECM ~ LN_GNP, data = life_dataset)
+```
+
+```{r get residuals}
+life_res <- resid(life_model)
+```
+
+```{r plot fitted vs residual}
+plot(fitted(life_model), life_res)
+```
+```{r plot life cumulative probs}
+life_probDist <- pnorm(scale(life_res))
+{plot(ppoints(length(scale(life_res))), sort(life_probDist),
+     xlab = "Observed Cum Prob", ylab = "Expected Cum Prob")
+abline(a=0,b=1)}
+```
+
+```{r plot hist of res}
+{hist(scale(life_res), freq = FALSE, breaks=40)
+curve(dnorm,add=TRUE)}
+```
