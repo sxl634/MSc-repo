@@ -31,7 +31,8 @@ res <- resid(model)
 ```
 
 ```{r plot fitted vs residual}
-plot(fitted(model), res)
+{plot(fitted(model), res)
+abline(0,0)}
 ```
 
 ```{r plot cumulative probs}
