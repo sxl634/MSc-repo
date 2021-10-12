@@ -70,7 +70,7 @@ probDist2 <- pnorm(scale(res2))
 abline(a=0,b=1)} #have to wrap this in {} to run as one code block else you get an error - damn markdown files
 ```
 
-```{r plot hist of res}
+```{r plot hist of res2}
 {hist(scale(res2), freq = FALSE, breaks=40)
 curve(dnorm,add=TRUE)}
 ```
@@ -89,11 +89,11 @@ life_dataset <- read_sav("Regression Modelling Data/life.sav")
 life_model <- lm(formula = LEXPECM ~ LN_GNP, data = life_dataset)
 ```
 
-```{r get residuals}
+```{r get life residuals}
 life_res <- resid(life_model)
 ```
 
-```{r plot fitted vs residual}
+```{r plot life fitted vs residual}
 plot(fitted(life_model), life_res)
 ```
 ```{r plot life cumulative probs}
@@ -103,7 +103,7 @@ life_probDist <- pnorm(scale(life_res))
 abline(a=0,b=1)}
 ```
 
-```{r plot hist of res}
+```{r plot hist of life_res}
 {hist(scale(life_res), freq = FALSE, breaks=40)
 curve(dnorm,add=TRUE)}
 ```
