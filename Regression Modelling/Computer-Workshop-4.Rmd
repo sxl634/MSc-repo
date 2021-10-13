@@ -1,0 +1,93 @@
+---
+title: "Computer workshop 4"
+author: "Sean Longman"
+date: "13/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(haven)
+library(tidyverse)
+library(olsrr)
+```
+
+```{r}
+salary <- read_sav("Regression Modelling Data/salary.sav")
+```
+
+```{r}
+fit1 <- lm(SALARY ~ SEX + DAGE, data = salary)
+summary(fit1)
+```
+
+```{r}
+salary <- salary %>% mutate (
+  rank1 = case_when(RANK==1 ~ 1, TRUE ~0),
+  rank2 = case_when(RANK==2 ~ 1, TRUE ~0)
+)
+```
+
+```{r}
+fit2 <- lm(SALARY ~ SEX + YEARS + DEGREE + DAGE + rank1 + rank2, data = salary)
+
+summary(fit2)
+```
+
+```{r}
+fit3 <- lm(SALARY ~ YEARS + DEGREE + DAGE + rank1 + rank2, data = salary)
+
+summary(fit3)
+```
+
+```{r}
+fit4 <- lm(SALARY ~ YEARS + DAGE + rank1 + rank2, data = salary)
+
+summary(fit4)
+```
+
+```{r}
+fit5 <- lm(SALARY ~ YEARS + rank1 + rank2, data = salary)
+
+summary(fit5)
+```
+
+```{r}
+fit6 <- ols_step_backward_p(fit2, prem = 0.05)
+summary(fit6$model)
+```
+
+```{r}
+fit7 <- lm(SALARY ~ SEX * DAGE, data = salary)
+
+summary(fit7)
+```
+
+```{r}
+salary <- salary %>% mutate(
+  r1y = rank1 * YEARS,
+  r2y = rank2 * YEARS
+)
+```
+
+```{r}
+fit8 <- lm(SALARY ~ YEARS + rank1 + rank2 + r1y + r2y, data = salary)
+
+summary(fit8)
+```
+```{r}
+saveRDS(salary, file = "Regression Modelling Data/newsalary.Rds")
+```
+
+```{r}
+fit9 <- lm(formula = SALARY ~ YEARS + rank1 + rank2, data = salary)
+fit10 <- lm(formula = SALARY ~ YEARS + rank1 + rank2 + r1y + r2y, data = salary)
+
+anova(fit9, fit10)
+```
+
+```{r}
+summary(fit9)
+summary(fit10)
+```
+
