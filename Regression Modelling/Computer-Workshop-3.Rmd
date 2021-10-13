@@ -1,0 +1,65 @@
+---
+title: "Computer Workshop 3"
+author: "Sean Longman"
+date: "12/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(haven)
+library(tidyverse)
+library(olsrr)
+```
+
+```{r}
+cars_data <- read_sav("Regression Modelling Data/cars.sav")
+```
+
+```{r}
+cars_data$gp000m <- 1000/cars_data$MPG
+summary(select(cars_data, c(gp000m,HORSE,WEIGHT)))
+```
+```{r}
+{plot(cars_data[,c("gp000m", "HORSE","WEIGHT")],
+     main = "Scatter of gp000m, horse and weight",
+)
+title(xlab = "test",ylab = "test")}
+```
+
+```{r}
+cor(cars_data$gp000m,cars_data$HORSE, use = "complete.obs", method = "pearson")
+cor(cars_data$gp000m,cars_data$WEIGHT, use = "complete.obs", method = "pearson")
+cor(cars_data$HORSE,cars_data$WEIGHT, use = "complete.obs", method = "pearson")
+
+```
+```{r}
+fit <- lm(gp000m ~ HORSE + WEIGHT, data = cars_data)
+summary(fit)
+```
+
+```{r}
+fit2 <- lm(gp000m ~ HORSE + WEIGHT + ACCEL + ENGINE, data = cars_data)
+summary(fit2)
+```
+```{r}
+forward <- ols_step_forward_p(fit2, penter = 0.05) # penter = significance
+forward
+```
+
+```{r}
+res <- resid(forward$model)
+{plot(fitted(forward$model), res)
+abline(0,0)}
+```
+```{r}
+backward <- ols_step_backward_p(fit2, prem = 0.05)
+backward
+backward$model
+```
+```{r}
+stepwise <- ols_step_both_p(fit2, prem = 0.1, pent = 0.1)
+stepwise
+stepwise$model
+```
+
