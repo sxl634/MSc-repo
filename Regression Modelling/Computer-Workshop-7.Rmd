@@ -1,0 +1,142 @@
+---
+title: "Computer Workshop 7"
+author: "Sean Longman"
+date: "14/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(haven)
+library(tidyverse)
+library(ResourceSelection)
+```
+
+## Load data
+```{r}
+alligato <- read_sav("Regression Modelling Data/alligato.sav")
+```
+
+## Clean data for binomial multiple logistic regression
+```{r}
+alligato <- alligato %>%
+  mutate(
+    eatsfish = case_when(CHOICE == 1 ~ 1, TRUE ~ 0)
+  )
+
+table(select(alligato, c(CHOICE, eatsfish)))
+```
+### percentage of alligators who prefer fish
+```{r}
+100*sum(alligato$eatsfish)/nrow(alligato)
+```
+## plot eatsfish against length using sex as marker
+
+```{r}
+colors <- c("#FDAE61","#66BD63")
+plot(alligato$LENGTH, alligato$eatsfish, col = colors[factor(alligato$SEX)],
+     xlab = "length", ylab = "eatsfish")
+```
+
+## Clustered boxplot
+```{r}
+cols <- rainbow(2, s = 0.5)
+boxplot(alligato$LENGTH ~ alligato$eatsfish + alligato$SEX,
+        xlab = "sex", ylab = "length", names = c("male","","","female"), col = cols)
+legend("topleft", fill = cols, legend = c("eatsfish = 0", "eatsfish = 1"), horiz = T)
+```
+
+## Fit simple logistic model
+```{r}
+fit1 <- glm(eatsfish ~ LENGTH + as.factor(SEX), data = alligato, family = binomial)
+summary(fit1)
+```
+## remove sex from model
+```{r}
+fit2 <- glm(eatsfish ~ LENGTH, data = alligato, family = binomial)
+summary(fit2)
+```
+## Predict the values
+```{r}
+alligato$glm_probs <- predict(fit2, type = "response")
+```
+
+## Compute marginal effects
+```{r}
+alligato$d_length <- alligato$glm_probs*(1-alligato$glm_probs)*1.053
+```
+
+## Scatter plot of marginal effects against the length variable
+```{r}
+cols  <- rainbow(2,s=0.5)
+plot(alligato$d_length ~ alligato$LENGTH, col = cols)
+legend("topright", fill = cols, legend = c("sex = male", "sex = female"), horiz = T)
+```
+
+On the logit scale the model is logit(pi) = -2.0794 + 1.0533 * LENGTH
+On the odds scale the model is pi/(1-pi) = exp(-2.0794 + 1.0533 * LENGTH) 
+                                          = exp(-2.0794)*exp(1.0533^LENGTH)
+                                          = exp(-2.7094)*2.867^LENGTH
+On the probability scale is pi = 1/(1+exp(-2.0794 + 1.0533 * LENGTH))
+
+### The predicted proability of a 1.6m alligator and a 1.5m alligator eating fish
+```{r}
+predict(fit2, newdata = data.frame(LENGTH = c(1.6,1.5)), type = "response")
+```
+## Marginal effect of length on the probability of eating fish for male and female alligators
+```{r}
+mean(alligato$d_length[alligato$SEX == 1])
+mean(alligato$d_length[alligato$SEX == 2])
+```
+## Hosmer-Lemeshow test
+```{r}
+hl <- hoslem.test(alligato$eatsfish, fitted(fit2),g = 10)
+hl
+cbind(hl$observed, hl$expected)
+```
+
+## interaction terms
+
+```{r}
+fit4 <- glm(eatsfish ~LENGTH + as.factor(SEX), data = alligato, family = binomial)
+summary(fit4)
+```
+
+```{r}
+fit5 <- glm(eatsfish ~LENGTH * as.factor(SEX), data = alligato, family = binomial)
+summary(fit5)
+```
+## Omnibus test
+```{r}
+anova(fit5, test = "Chisq")
+```
+
+Model on the logit scale logit(pi) = -0.920 + 0.559 * LENGTH - 6.699 * SEX(2) + 3.037 * LENGTH*SEX(2)
+MALES: logit(pi) = -0.920 + 0.559 * LENGTH
+FEMALES: logit(pi) = -0.920 + 0.559 * LENGTH - 6.699 * 1 + 3.037 * LENGTH*1
+                    = -7.619 + 3.596 * LENGTH
+                    
+Model on the odds scale:
+pi/(1-pi) = exp(-0.920 + 0.559 * LENGTH - 6.699 * SEX(2) + 3.037 * LENGTH*SEX(2))
+
+MALES: exp(-0.920 + 0.559 * LENGTH) = exp(-0.92)*1.749^LENGTH
+FEMALES: exp(7.619) * 36.452^LENGTH
+
+Model on the probability scale:
+pi = exp(-0.920 + 0.559 * LENGTH - 6.699 * SEX(2) + 3.037 * LENGTH*SEX(2))/(1+exp(-0.920 + 0.559 * LENGTH - 6.699 * SEX(2) + 3.037 * LENGTH*SEX(2)))
+
+MALES:  exp(-0.92)*1.749^LENGTH/(1+ exp(-0.92)*1.749^LENGTH)
+FEMALES: exp(7.619) * 36.452^LENGTH/(1+exp(7.619) * 36.452^LENGTH)
+
+### Predict for 1.6m male and 1.5m female
+```{r}
+predict(fit5, newdata = data.frame(LENGTH = c(1.6,1.5), SEX = c(1,2)), type = "response")
+```
+Scatter plot of predicted probabilities
+```{r}
+alligato$fit5_probs <- predict(fit5, type = "response")
+cols  <- rainbow(2,s=0.5)
+plot(fit5_probs ~ LENGTH, data = alligato, xlim = c(0,4), ylim = c(0,1), col = cols)
+legend("topleft", fill = cols, legend = c("sex = male", "sex = female"), horiz = T)
+```
+
