@@ -1,0 +1,114 @@
+---
+title: "Computer Workshop 5"
+author: "Sean Longman"
+date: "13/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(haven)
+library(tidyverse)
+library(boot)
+```
+
+```{r}
+quad <- read_sav("Regression Modelling Data/quad.sav")
+shares <- read_sav("Regression Modelling Data/shares.sav")
+cars <- read_sav("Regression Modelling Data/cars.sav")
+```
+
+```{r}
+plot(quad$X, quad$Y)
+abline(lm(Y ~ X,data = quad))
+```
+```{r}
+{plot(quad$X, resid(lm(Y~X,quad)))
+abline(0,0)}
+```
+```{r}
+summary(lm(Y~X,quad))
+```
+
+```{r}
+quad$Xsq <- quad$X^2
+```
+
+```{r}
+fit2 <- lm(Y~X+Xsq,quad)
+summary(fit2)
+```
+
+```{r}
+{plot(quad$X, resid(fit2))
+abline(0,0)}
+```
+
+#Bootstrap Example
+```{r}
+cars$gp000m <- 1000/cars$MPG
+```
+
+```{r}
+bs <- function(formula,data, indices) {
+  #print(indices) # indices comes from the boot function, it points out which data points from cars to use
+  d <- data[indices,]
+  fit <- lm(formula, data = d)
+  return(coef(fit))
+}
+
+results <- boot(data = cars, statistic =  bs, R=2000, formula = gp000m ~ HORSE + WEIGHT)
+results
+
+```
+```{r}
+ci_var1 <- boot.ci(results, type = "perc", index = 1)
+ci_var2 <- boot.ci(results, type = "perc", index = 2)
+```
+
+
+```{r}
+fit3 <- lm(formula = gp000m ~ HORSE + WEIGHT, data = cars)
+summary(fit3)
+```
+
+```{r}
+results2 <- boot(data = cars, statistic =  bs, R=2000, formula = gp000m ~ HORSE + WEIGHT)
+results2
+```
+
+```{r}
+results3 <- boot(data = cars, statistic =  bs, R=2000, formula = gp000m ~ HORSE + WEIGHT)
+results3
+```
+
+```{r}
+results4 <- boot(data = cars, statistic =  bs, R=4000, formula = gp000m ~ HORSE + WEIGHT)
+results4
+```
+
+#Bootstrap where variances are non-constant
+```{r}
+fit4 <- lm(Y~X, data = shares)
+summary(fit4)
+```
+
+```{r}
+{plot(shares$X, resid(fit4))
+abline(0,0)}
+```
+
+```{r}
+plot(shares$X, shares$Y)
+abline(fit4)
+```
+
+```{r}
+summary(fit4)
+```
+
+```{r}
+results5 <- boot(data = shares, statistic =  bs, R=5000, formula = Y~X)
+results5
+
+```

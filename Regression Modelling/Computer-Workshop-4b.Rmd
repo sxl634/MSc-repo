@@ -1,0 +1,40 @@
+---
+title: "Computer Workshop 4b"
+author: "Sean Longman"
+date: "13/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(haven)
+library(tidyverse)
+library(olsrr)
+```
+
+```{r}
+sbs399 <- read_sav("Regression Modelling Data/sbs399.sav")
+```
+
+```{r}
+sbs399 <- sbs399 %>%
+  mutate(
+    educyr = case_when(
+      EDUC == 1 ~ 6,
+      EDUC == 2 | EDUC == 3 ~ 10,
+      EDUC == 4 ~ 11,
+      EDUC == 5 ~ 12,
+      EDUC == 6 ~ 14,
+      EDUC == 7 ~ 16,
+      EDUC == 8 ~ 18,
+      EDUC == 9 ~ 22
+    )
+  )
+```
+
+```{r}
+gender <- factor(sbs399$SEX, c(0,1), labels=c("man", "woman"))
+fit1 <- lm(HRINC ~ educyr + gender, data = sbs399)
+summary(fit1)
+```
+

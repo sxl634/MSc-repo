@@ -1,0 +1,85 @@
+---
+title: "Computer Workshop 6"
+author: "Sean Longman"
+date: "14/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(haven)
+library(tidyverse)
+```
+
+# Load data
+```{r}
+wais <- read_sav("Regression Modelling Data/wais.sav")
+```
+
+# Fit Logistic Model
+```{r}
+fit1 <- glm(SENILITY ~ WAIS, data = wais, family = binomial)
+summary(fit1)
+```
+
+# predict
+```{r}
+wais$predprob <- predict.glm(fit1, type = "response")
+wais$logit <- predict.glm(fit1)
+wais$predSenility <- case_when(wais$predprob >=0.5 ~ 1, TRUE ~ 0)
+wais$correct <- case_when(wais$SENILITY == wais$predSenility ~ 1, TRUE ~ 0)
+100*sum(filter(wais, SENILITY == 1)$correct)/sum(wais$SENILITY)
+-fit1$coefficients[1]/fit1$coefficients[2]
+```
+# Plot
+```{r}
+ggplot(wais, aes(x=WAIS, y=predprob)) + 
+  geom_line(lwd=2) + 
+  geom_point(data = wais, aes(x = WAIS, y = SENILITY)) + 
+  labs(x="WAIS score", y="P(SENILITY)", title="Probability of Senility") 
+
+table(select(wais,c(SENILITY, predSenility)))
+```
+```{r}
+# scatterplot of logarithmic predicted probabilities against wais
+plot(wais$logit ~ wais$WAIS, xlab = "WAIS Test score", ylab = "Logitpr")
+```
+
+# Test model
+```{r}
+anova(fit1, test = "Chisq")
+```
+
+```{r}
+glm_probs <- data.frame(predict(fit1, type = "response"))
+logit <- log(glm_probs /( 1 - glm_probs))
+```
+
+```{r}
+new_predict <- predict.glm(fit1, newdata = data.frame(WAIS = c(6,18)), type = "response")
+```
+
+#Fit Linear Regression
+```{r}
+fit2 <- lm(SENILITY ~WAIS, data = wais)
+summary(fit2)
+```
+
+# Plot PP plot
+```{r}
+res <- resid(fit2)
+probDist <- pnorm(scale(res))
+{plot(ppoints(length(scale(res))), sort(probDist),
+     xlab = "Observed Cum Prob", ylab = "Expected Cum Prob")
+abline(a=0,b=1)}
+```
+# Plot standardised residuals vs predicted
+```{r}
+{plot(fitted(fit2), res)
+abline(0,0)}
+```
+# predict scores
+```{r}
+lm_predict <- predict(fit2, newdata = data.frame(WAIS = c(6,18)))
+```
+
