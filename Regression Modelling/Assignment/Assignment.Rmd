@@ -1,0 +1,20 @@
+---
+title: "Regression Modelling Coursework"
+author: "Sean Longman"
+date: "14/10/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(haven)
+library(tidyverse)
+library(olsrr)
+library(ResourceSelection)
+```
+
+## Load the demographic and health survey data
+```{r}
+dem_health_surv <- read_sav("assignment data/demographic and health survey.sav")
+```
+
