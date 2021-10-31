@@ -11,10 +11,157 @@ library(haven)
 library(tidyverse)
 library(olsrr)
 library(ResourceSelection)
+library(pastecs)
+library(openxlsx)
 ```
 
 ## Load the demographic and health survey data
 ```{r}
-dem_health_surv <- read_sav("assignment data/demographic and health survey.sav")
+dem_health_surv_orig <- read_sav("assignment data/demographic and health survey.sav")
+dem_health_surv <- dem_health_surv_orig # separate variable to restart in case of error rather than reload data
+```
+
+## Separating categorical variables into dummy variables
+```{r}
+# Turn into character before turning into factor. Numeric to factor sometimes has issues in R due to how R codes factor variables
+dem_health_surv[,4:9] <- lapply(dem_health_surv[,4:9], as.character) 
+
+# turn into factor
+dem_health_surv[,4:9] <- lapply(dem_health_surv[,4:9], factor) 
+
+# Do a summary to decide which categories to turn into reference categories
+summary(dem_health_surv[,4:9])
+
+# Create dummies, turning categories with least number of obs into reference categories
+# mutate allows to alter multiple varaibles within data frame in one code block and works with dplyr pipe operator (%>%) meaning
+# I don't need to always put dem_health_surv$, can just reference variable without data frame
+dem_health_surv <- dem_health_surv %>%
+  mutate(
+    male = case_when(SEX == 0 ~ 1, TRUE ~ 0), # case_when is another version of ifelse function from dplyr package
+    bf1 = case_when(BREASTFEED == 1 ~ 1, TRUE ~ 0),
+    bf2 = case_when(BREASTFEED == 2 ~ 1, TRUE ~ 0),
+    bf3 = case_when(BREASTFEED == 3 ~ 1, TRUE ~ 0),
+    momedu0 = case_when(MOMEDU == 0 ~ 1, TRUE ~ 0),
+    momedu1 = case_when(MOMEDU == 1 ~ 1, TRUE ~ 0),
+    wealth1 = case_when(WEALTHIND == 1 ~ 1, TRUE ~ 0),
+    wealth2 = case_when(WEALTHIND == 2 ~ 1, TRUE ~ 0),
+    wealth3 = case_when(WEALTHIND == 3 ~ 1, TRUE ~ 0),
+    wealth4 = case_when(WEALTHIND == 4 ~ 1, TRUE ~ 0),
+    residence2 = case_when(RESIDENCE == 2 ~ 1, TRUE ~ 0),
+    numchild2 = case_when(LIVCHN == 2 ~ 1, TRUE ~ 0),
+    numchild3 = case_when(LIVCHN == 3 ~ 1, TRUE ~ 0)
+  )
+```
+## Create scatter plots of continuous variables to look for correlation
+```{r}
+png("contin_var_scatterplots.png")
+plot(dem_health_surv[,c("HW5", "MOMAGE","MOMWEIGHT")],
+     main = "Scatter of height-for-age z-score, mother's age and mother's weight",
+)
+dev.off()
+stat.desc(dem_health_surv[,1:3])
+# typeof(table(dem_health_surv$WEALTHIND, dem_health_surv$RESIDENCE))
+```
+## Create tables for categorical variables
+```{r}
+
+wb <- createWorkbook()
+#SEX      BREASTFEED MOMEDU   WEALTHIND RESIDENCE LIVCHN
+addWorksheet(wb, "Categorical var tables")
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$SEX, dem_health_surv$BREASTFEED)),
+          colNames = TRUE,
+          xy = c(1,1)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$SEX, dem_health_surv$MOMEDU)),
+          colNames = TRUE,
+          xy = c(1,5)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$SEX, dem_health_surv$WEALTHIND)),
+          colNames = TRUE,
+          xy = c(1,9)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$SEX, dem_health_surv$RESIDENCE)),
+          colNames = TRUE,
+          xy = c(1,13)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$SEX, dem_health_surv$LIVCHN)),
+          colNames = TRUE,
+          xy = c(1,17)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$BREASTFEED, dem_health_surv$MOMEDU)),
+          colNames = TRUE,
+          xy = c(1,21)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$BREASTFEED, dem_health_surv$WEALTHIND)),
+          colNames = TRUE,
+          xy = c(1,27)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$BREASTFEED, dem_health_surv$RESIDENCE)),
+          colNames = TRUE,
+          xy = c(1,33)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$BREASTFEED, dem_health_surv$LIVCHN)),
+          colNames = TRUE,
+          xy = c(1,39)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$MOMEDU, dem_health_surv$WEALTHIND)),
+          colNames = TRUE,
+          xy = c(1,45)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$MOMEDU, dem_health_surv$RESIDENCE)),
+          colNames = TRUE,
+          xy = c(1,50)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$MOMEDU, dem_health_surv$LIVCHN)),
+          colNames = TRUE,
+          xy = c(1,55)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$WEALTHIND, dem_health_surv$RESIDENCE)),
+          colNames = TRUE,
+          xy = c(1,60)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$WEALTHIND, dem_health_surv$LIVCHN)),
+          colNames = TRUE,
+          xy = c(1,67)
+)
+writeData(wb,
+          "Categorical var tables",
+          as.matrix(table(dem_health_surv$RESIDENCE, dem_health_surv$LIVCHN)),
+          colNames = TRUE,
+          xy = c(1,74)
+)
+ 
+saveWorkbook(wb, "Descriptive statistics.xlsx", overwrite = TRUE)
+
+
+
 ```
 
