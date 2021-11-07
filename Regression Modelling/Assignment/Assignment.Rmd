@@ -2,7 +2,9 @@
 title: "Regression Modelling Coursework"
 author: "Sean Longman"
 date: "14/10/2021"
-output: pdf_document
+output:
+  word_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -37,17 +39,23 @@ summary(dem_health_surv[,4:9])
 # I don't need to always put dem_health_surv$, can just reference variable without data frame
 dem_health_surv <- dem_health_surv %>%
   mutate(
-    male = case_when(SEX == 0 ~ 1, TRUE ~ 0), # case_when is another version of ifelse function from dplyr package
+    HW5_ltn2 = case_when(HW5 < -2 ~ 1, TRUE ~ 0), # ltn2 = less than negative 2, case_when is another version of ifelse function from dplyr package
+    male = case_when(SEX == 0 ~ 1, TRUE ~ 0),
     bf1 = case_when(BREASTFEED == 1 ~ 1, TRUE ~ 0),
     bf2 = case_when(BREASTFEED == 2 ~ 1, TRUE ~ 0),
     bf3 = case_when(BREASTFEED == 3 ~ 1, TRUE ~ 0),
+    bf4 = case_when(BREASTFEED == 4 ~ 1, TRUE ~ 0),
     momedu0 = case_when(MOMEDU == 0 ~ 1, TRUE ~ 0),
     momedu1 = case_when(MOMEDU == 1 ~ 1, TRUE ~ 0),
+    momedu2 = case_when(MOMEDU == 2 ~ 1, TRUE ~ 0),
     wealth1 = case_when(WEALTHIND == 1 ~ 1, TRUE ~ 0),
     wealth2 = case_when(WEALTHIND == 2 ~ 1, TRUE ~ 0),
     wealth3 = case_when(WEALTHIND == 3 ~ 1, TRUE ~ 0),
     wealth4 = case_when(WEALTHIND == 4 ~ 1, TRUE ~ 0),
-    residence2 = case_when(RESIDENCE == 2 ~ 1, TRUE ~ 0),
+    wealth5 = case_when(WEALTHIND == 5 ~ 1, TRUE ~ 0),
+    rural = case_when(RESIDENCE == 2 ~ 1, TRUE ~ 0),
+    urban = case_when(RESIDENCE == 1 ~ 1, TRUE ~ 0),
+    numchild1 = case_when(LIVCHN == 1 ~ 1, TRUE ~ 0),
     numchild2 = case_when(LIVCHN == 2 ~ 1, TRUE ~ 0),
     numchild3 = case_when(LIVCHN == 3 ~ 1, TRUE ~ 0)
   )
@@ -62,6 +70,12 @@ dev.off()
 stat.desc(dem_health_surv[,1:3])
 # typeof(table(dem_health_surv$WEALTHIND, dem_health_surv$RESIDENCE))
 ```
+##Boxplot of dependent variable HW5
+```{r}
+boxplot(dem_health_surv$HW5)
+```
+
+
 ## Create tables for categorical variables
 ```{r}
 
@@ -161,7 +175,120 @@ writeData(wb,
  
 saveWorkbook(wb, "Descriptive statistics.xlsx", overwrite = TRUE)
 
+```
 
+```{r}
+mlr_full_model <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$male + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$rural + dem_health_surv$numchild2 + dem_health_surv$numchild3)
+
+summary(mlr_full_model)
+```
+```{r}
+## rural, male and breastfeed are all insignificant. Comparing p-values on male and rural, rural has a higher p-value so will compare rural vs. bf.
+## Creating the models, looking at the adjusted R squared values with each variable removed, the model with the breast feed variable has a higher R squared value than the model
+## with rural in it and an anova test shows it is statistically significantly different so remove the rural variable
+test_fit1 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$male + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3 + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3)
+
+test_fit2 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$male + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$rural + dem_health_surv$numchild2 + dem_health_surv$numchild3)
+
+summary(test_fit1)
+summary(test_fit2)
+anova(test_fit1, test_fit2)
+```
+```{r}
+mlr_bw_elim_v1 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$male + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3)
+
+summary(mlr_bw_elim_v1)
+```
+
+```{r}
+## bf and male are insignificant.Looking at the Adjusted R-squared with each variable removed, model with bf variable has a higher R-Squared and using an anova test, the R squared value is statistically significantly different
+## Therefore remove male variable
+test_fit3 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3)
+
+test_fit4 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$male + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3)
+
+summary(test_fit3)
+summary(test_fit4)
+
+anova(test_fit3, test_fit4)
+
+```
+```{r}
+mlr_bw_elim_v2 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3)
+summary(mlr_bw_elim_v2)
+```
+
+```{r}
+## Removing bf as insignificant
+mlr_bw_elim_final <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3)
+summary(mlr_bw_elim_final)
+```
+```{r}
+## Repeat model selection with stepwise
+## Models with one of the variables
+summary(lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE))
+summary(lm(dem_health_surv$HW5 ~ dem_health_surv$MOMWEIGHT))
+summary(lm(dem_health_surv$HW5 ~ dem_health_surv$male))
+summary(lm(dem_health_surv$HW5 ~ dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3))
+summary(lm(dem_health_surv$HW5 ~ dem_health_surv$momedu0 + dem_health_surv$momedu1))
+summary(lm(dem_health_surv$HW5 ~ dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4))
+summary(lm(dem_health_surv$HW5 ~ dem_health_surv$rural))
+summary(lm(dem_health_surv$HW5 ~ dem_health_surv$numchild2 +dem_health_surv$numchild3 ))
+
+```
+
+```{r}
+stepwise_model_v1 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMWEIGHT)
+summary(stepwise_model_v1)
+
+stepwise_model_v2 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMWEIGHT + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4)
+summary(stepwise_model_v2)
+
+stepwise_model_v3 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMWEIGHT + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$momedu0 + dem_health_surv$momedu1)
+summary(stepwise_model_v3)
+
+stepwise_model_v4 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMWEIGHT + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$rural)
+summary(stepwise_model_v4)
+#Remove rural var as not significant to the 95% level
+stepwise_model_v5 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMWEIGHT + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3)
+summary(stepwise_model_v5)
+
+#Remove bf var as not significant to the 95% level
+stepwise_model_final <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMWEIGHT + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$momedu0 + dem_health_surv$momedu1)
+summary(stepwise_model_final)
+```
+```{r}
+anova(stepwise_model_final,mlr_bw_elim_final)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+fit1 <- glm(HW5_ltn2 ~ MOMAGE + MOMWEIGHT + LIVCHN, data = dem_health_surv, family = binomial)
+summary(fit1)
+```
+
+```{r}
+fit1 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$SEX + dem_health_surv$BREASTFEED + dem_health_surv$MOMEDU + dem_health_surv$WEALTHIND + dem_health_surv$RESIDENCE + dem_health_surv$LIVCHN)
+summary(fit1)
+```
+```{r}
+stepwise <- ols_step_both_p(lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$SEX + dem_health_surv$BREASTFEED + dem_health_surv$MOMEDU + dem_health_surv$WEALTHIND + dem_health_surv$RESIDENCE + dem_health_surv$LIVCHN), prem = 0.1, pent = 0.1)
+stepwise$model
+
+ols_step_forward_p(lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$SEX + dem_health_surv$BREASTFEED + dem_health_surv$MOMEDU + dem_health_surv$WEALTHIND + dem_health_surv$RESIDENCE + dem_health_surv$LIVCHN), pent = 0.05)
+
+ols_step_backward_p(lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$SEX + dem_health_surv$BREASTFEED + dem_health_surv$MOMEDU + dem_health_surv$WEALTHIND + dem_health_surv$RESIDENCE + dem_health_surv$LIVCHN), prem = 0.05)
 
 ```
 
