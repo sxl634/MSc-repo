@@ -15,6 +15,7 @@ library(olsrr)
 library(ResourceSelection)
 library(pastecs)
 library(openxlsx)
+library(lmtest)
 ```
 
 ## Load the demographic and health survey data
@@ -62,121 +63,32 @@ dem_health_surv <- dem_health_surv %>%
 ```
 ## Create scatter plots of continuous variables to look for correlation
 ```{r}
-png("contin_var_scatterplots.png")
+#png("contin_var_scatterplots.png")
 plot(dem_health_surv[,c("HW5", "MOMAGE","MOMWEIGHT")],
      main = "Scatter of height-for-age z-score, mother's age and mother's weight",
 )
-dev.off()
+#dev.off()
 stat.desc(dem_health_surv[,1:3])
 # typeof(table(dem_health_surv$WEALTHIND, dem_health_surv$RESIDENCE))
 ```
+```{r}
+cor(dem_health_surv[,c("HW5", "MOMAGE", "MOMWEIGHT")], method = "pearson", use = "complete.obs")
+```
+
 ##Boxplot of dependent variable HW5
 ```{r}
 boxplot(dem_health_surv$HW5)
 ```
-
-
-## Create tables for categorical variables
+## tables looking at correlation between dependent and independent variables
 ```{r}
-
-wb <- createWorkbook()
-#SEX      BREASTFEED MOMEDU   WEALTHIND RESIDENCE LIVCHN
-addWorksheet(wb, "Categorical var tables")
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$SEX, dem_health_surv$BREASTFEED)),
-          colNames = TRUE,
-          xy = c(1,1)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$SEX, dem_health_surv$MOMEDU)),
-          colNames = TRUE,
-          xy = c(1,5)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$SEX, dem_health_surv$WEALTHIND)),
-          colNames = TRUE,
-          xy = c(1,9)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$SEX, dem_health_surv$RESIDENCE)),
-          colNames = TRUE,
-          xy = c(1,13)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$SEX, dem_health_surv$LIVCHN)),
-          colNames = TRUE,
-          xy = c(1,17)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$BREASTFEED, dem_health_surv$MOMEDU)),
-          colNames = TRUE,
-          xy = c(1,21)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$BREASTFEED, dem_health_surv$WEALTHIND)),
-          colNames = TRUE,
-          xy = c(1,27)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$BREASTFEED, dem_health_surv$RESIDENCE)),
-          colNames = TRUE,
-          xy = c(1,33)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$BREASTFEED, dem_health_surv$LIVCHN)),
-          colNames = TRUE,
-          xy = c(1,39)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$MOMEDU, dem_health_surv$WEALTHIND)),
-          colNames = TRUE,
-          xy = c(1,45)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$MOMEDU, dem_health_surv$RESIDENCE)),
-          colNames = TRUE,
-          xy = c(1,50)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$MOMEDU, dem_health_surv$LIVCHN)),
-          colNames = TRUE,
-          xy = c(1,55)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$WEALTHIND, dem_health_surv$RESIDENCE)),
-          colNames = TRUE,
-          xy = c(1,60)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$WEALTHIND, dem_health_surv$LIVCHN)),
-          colNames = TRUE,
-          xy = c(1,67)
-)
-writeData(wb,
-          "Categorical var tables",
-          as.matrix(table(dem_health_surv$RESIDENCE, dem_health_surv$LIVCHN)),
-          colNames = TRUE,
-          xy = c(1,74)
-)
- 
-saveWorkbook(wb, "Descriptive statistics.xlsx", overwrite = TRUE)
-
+table(dem_health_surv$HW5_ltn2, dem_health_surv$SEX, dnn = c("HW5","SEX"))
+table(dem_health_surv$HW5_ltn2, dem_health_surv$BREASTFEED, dnn = c("HW5","BREASTFEED"))
+table(dem_health_surv$HW5_ltn2, dem_health_surv$MOMEDU, dnn = c("HW5","MOMEDU"))
+table(dem_health_surv$HW5_ltn2, dem_health_surv$WEALTHIND, dnn = c("HW5","WEALTHIND"))
+table(dem_health_surv$HW5_ltn2, dem_health_surv$RESIDENCE, dnn = c("HW5","RESIDENCE"))
+table(dem_health_surv$HW5_ltn2, dem_health_surv$LIVCHN, dnn = c("HW5","LIVCHN")) #29.8
 ```
-
+## Linear models
 ```{r}
 mlr_full_model <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$male + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$rural + dem_health_surv$numchild2 + dem_health_surv$numchild3)
 
@@ -217,12 +129,23 @@ anova(test_fit3, test_fit4)
 mlr_bw_elim_v2 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3)
 summary(mlr_bw_elim_v2)
 ```
-
+### final backward elimination model
 ```{r}
 ## Removing bf as insignificant
 mlr_bw_elim_final <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3)
 summary(mlr_bw_elim_final)
 ```
+###residual analysis
+```{r}
+mlr_bw_elim_final_res <- resid(mlr_bw_elim_final)
+{plot(fitted(mlr_bw_elim_final), mlr_bw_elim_final_res)
+abline(0,0)}
+```
+```{r}
+{hist(scale(mlr_bw_elim_final_res), freq = FALSE, breaks=40)
+curve(dnorm,add=TRUE)}
+```
+##Stepwise model selection
 ```{r}
 ## Repeat model selection with stepwise
 ## Models with one of the variables
@@ -257,38 +180,230 @@ summary(stepwise_model_v5)
 stepwise_model_final <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMWEIGHT + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$momedu0 + dem_health_surv$momedu1)
 summary(stepwise_model_final)
 ```
+##Compare models
 ```{r}
 anova(stepwise_model_final,mlr_bw_elim_final)
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
+##Interaction variable intro
 ```{r}
-fit1 <- glm(HW5_ltn2 ~ MOMAGE + MOMWEIGHT + LIVCHN, data = dem_health_surv, family = binomial)
-summary(fit1)
+mlr_full_model_inter <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$male + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$rural + dem_health_surv$numchild2 + dem_health_surv$numchild3 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild2 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild3)
+
+summary(mlr_full_model_inter)
 ```
 
 ```{r}
-fit1 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$SEX + dem_health_surv$BREASTFEED + dem_health_surv$MOMEDU + dem_health_surv$WEALTHIND + dem_health_surv$RESIDENCE + dem_health_surv$LIVCHN)
-summary(fit1)
+## rural, male and breastfeed are all insignificant. Comparing p-values on male and rural, rural has a higher p-value so will compare rural vs. bf.
+## Creating the models, looking at the adjusted R squared values with each variable removed, the model with the breast feed variable has a higher R squared value than the model
+## with rural in it and an anova test shows it is statistically significantly different so remove the rural variable
+test_fit1 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$male + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3 + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild2 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild3)
+
+test_fit2 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$male + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$rural + dem_health_surv$numchild2 + dem_health_surv$numchild3 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild2 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild3)
+
+summary(test_fit1)
+summary(test_fit2)
+anova(test_fit1, test_fit2)
+```
+
+```{r}
+bw_mlr_inter_v1 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$male + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild2 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild3)
+
+summary(bw_mlr_inter_v1)
 ```
 ```{r}
-stepwise <- ols_step_both_p(lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$SEX + dem_health_surv$BREASTFEED + dem_health_surv$MOMEDU + dem_health_surv$WEALTHIND + dem_health_surv$RESIDENCE + dem_health_surv$LIVCHN), prem = 0.1, pent = 0.1)
-stepwise$model
+## bf and male are insignificant.Looking at the Adjusted R-squared with each variable removed, model with bf variable has a higher R-Squared and using an anova test, the R squared value is statistically significantly different
+## Therefore remove male variable
+test_fit3 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild2 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild3)
 
-ols_step_forward_p(lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$SEX + dem_health_surv$BREASTFEED + dem_health_surv$MOMEDU + dem_health_surv$WEALTHIND + dem_health_surv$RESIDENCE + dem_health_surv$LIVCHN), pent = 0.05)
+test_fit4 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$male + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild2 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild3)
 
-ols_step_backward_p(lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$SEX + dem_health_surv$BREASTFEED + dem_health_surv$MOMEDU + dem_health_surv$WEALTHIND + dem_health_surv$RESIDENCE + dem_health_surv$LIVCHN), prem = 0.05)
+summary(test_fit3)
+summary(test_fit4)
+
+anova(test_fit3, test_fit4)
+```
+```{r}
+bw_mlr_inter_v2 <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$bf1 + dem_health_surv$bf2 + dem_health_surv$bf3 + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild2 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild3)
+
+summary(bw_mlr_inter_v2)
+```
+```{r}
+bw_mlr_inter_final <- lm(dem_health_surv$HW5 ~ dem_health_surv$MOMAGE + dem_health_surv$MOMWEIGHT + dem_health_surv$momedu0 + dem_health_surv$momedu1 + dem_health_surv$wealth1 + dem_health_surv$wealth2 + dem_health_surv$wealth3 + dem_health_surv$wealth4 + dem_health_surv$numchild2 + dem_health_surv$numchild3 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild2 + dem_health_surv$MOMWEIGHT*dem_health_surv$numchild3)
+
+summary(bw_mlr_inter_final)
+```
+```{r}
+bw_mlr_inter_final_res <- resid(bw_mlr_inter_final)
+{plot(fitted(bw_mlr_inter_final), bw_mlr_inter_final_res)
+abline(0,0)}
+```
+
+```{r}
+{hist(scale(bw_mlr_inter_final_res), freq = FALSE, breaks=40)
+curve(dnorm,add=TRUE)}
+```
+```{r}
+anova(bw_mlr_inter_final,mlr_bw_elim_final)
+```
+## Exploratory data analysis for logit model
+```{r}
+table(dem_health_surv$HW5_ltn2)
+1133/(2666 + 1133)
+```
+
+```{r}
+colors <- c("#FDAE61","#66BD63","#FF0000")#,"#0000FF","#FF00FF")
+plot(dem_health_surv$MOMWEIGHT, dem_health_surv$HW5_ltn2, col = colors[factor(dem_health_surv$LIVCHN)],
+     xlab = "MOMWEIGHT", ylab = "malnourished")
+legend("center", legend = c("Less than 3 living children","3-4 living children","5+ living children"), pch = 19, col = colors)
+```
+```{r}
+cols <- rainbow(2, s = 0.5)
+boxplot(dem_health_surv$MOMWEIGHT ~ dem_health_surv$HW5_ltn2 + dem_health_surv$LIVCHN,
+        xlab = "momedu", ylab = "weight", names = c("1","1","2","2","3","3"), col = cols)
+par(mar=c(5.1, 4.1, 4.1, 8.1), xpd=TRUE)
+legend("topleft", fill = cols, legend = c("not malnourished = 0", "malnourished = 1"),inset=c(0,-0.15), horiz = T)
+```
+
+```{r}
+full_mlogr_model <- glm(HW5_ltn2 ~ MOMWEIGHT + momedu0 + momedu1 + numchild2 + numchild3 + wealth1 + wealth2 + wealth3 + wealth4 + MOMAGE + bf1 + bf2 + bf3 + rural + male, data = dem_health_surv, family = binomial)
+
+summary(full_mlogr_model)
+```
+```{r}
+#reorder model to be in order of significance so that table of deviance can show when adding variables isn't adding to model fit
+full_mlogr_model <- glm(HW5_ltn2 ~ MOMWEIGHT + numchild2 + numchild3 + MOMAGE + momedu0 + momedu1 + wealth1 + wealth2 + wealth3 + wealth4 + bf1 + bf2 + bf3 + rural + male, data = dem_health_surv, family = binomial)
+summary(full_mlogr_model)
+```
+
+```{r}
+anova(full_mlogr_model, test = "Chisq")
+```
+```{r}
+mlogr_bw_model_v1 <- glm(HW5_ltn2 ~ MOMWEIGHT + numchild2 + numchild3 + MOMAGE + momedu0 + momedu1 + wealth1 + wealth2 + wealth3 + wealth4 + bf1 + bf2 + bf3 + rural, data = dem_health_surv, family = binomial)
+
+summary(mlogr_bw_model_v1)
+```
+```{r}
+anova(mlogr_bw_model_v1, test = "Chisq")
+```
+```{r}
+mlogr_bw_model_v2 <- glm(HW5_ltn2 ~ MOMWEIGHT + numchild2 + numchild3 + MOMAGE + momedu0 + momedu1 + wealth1 + wealth2 + wealth3 + wealth4 + bf1 + bf2 + bf3, data = dem_health_surv, family = binomial)
+
+summary(mlogr_bw_model_v2)
+```
+
+```{r}
+anova(mlogr_bw_model_v2, test = "Chisq")
+```
+```{r}
+mlogr_bw_model_v3 <- glm(HW5_ltn2 ~ MOMWEIGHT + numchild2 + numchild3 + MOMAGE + momedu0 + momedu1 + wealth1 + wealth2 + wealth3 + wealth4, data = dem_health_surv, family = binomial)
+
+summary(mlogr_bw_model_v3)
+```
+
+```{r}
+anova(mlogr_bw_model_v3, test = "Chisq")
+```
+
+
+```{r}
+hl1 <- hoslem.test(dem_health_surv$HW5_ltn2, fitted(mlogr_bw_model_v3), g= 10)
+hl1
+cbind(hl1$observed, hl1$expected)
+```
+```{r}
+mlogr_bw_model_v3_probs <- predict(mlogr_bw_model_v3, type = "response")
+mlogr_bw_model_v3_pred <- ifelse(mlogr_bw_model_v3_probs > 0.5, "Pred Malnourished","Pred Not Malnourished")
+table(mlogr_bw_model_v3_pred, dem_health_surv$HW5_ltn2)
 
 ```
 
+```{r}
+mlogr_inter_only <- glm(HW5_ltn2 ~ MOMWEIGHT + numchild2 + numchild3 + MOMWEIGHT*numchild2 + MOMWEIGHT*numchild3, data = dem_health_surv, family = binomial)
+summary(mlogr_inter_only)
+
+```
+```{r}
+anova(mlogr_inter_only, test="Chisq")
+```
+```{r}
+hl1 <- hoslem.test(dem_health_surv$HW5_ltn2, fitted(mlogr_inter_only), g= 10)
+hl1
+cbind(hl1$observed, hl1$expected)
+```
+
+
+```{r}
+mlogr_inter_full <- glm(HW5_ltn2 ~ MOMWEIGHT + numchild2 + numchild3 + MOMAGE +  momedu0 + momedu1 + wealth1 + wealth2 + wealth3 + wealth4 + bf1 + bf2 + bf3 + rural + male + MOMWEIGHT*numchild2 + MOMWEIGHT*numchild3, data = dem_health_surv, family = binomial)
+
+summary(mlogr_inter_full)
+```
+```{r}
+anova(mlogr_inter_full, test="Chisq")
+```
+```{r}
+mlogr_inter_v1 <- glm(HW5_ltn2 ~ MOMWEIGHT + numchild2 + numchild3 + MOMAGE +  momedu0 + momedu1 + wealth1 + wealth2 + wealth3 + wealth4 + bf1 + bf2 + bf3 + rural + MOMWEIGHT*numchild2 + MOMWEIGHT*numchild3, data = dem_health_surv, family = binomial)
+
+summary(mlogr_inter_v1)
+```
+```{r}
+mlogr_inter_v2 <- glm(HW5_ltn2 ~ MOMWEIGHT + numchild2 + numchild3 + MOMAGE +  momedu0 + momedu1 + wealth1 + wealth2 + wealth3 + wealth4 + bf1 + bf2 + bf3 +  MOMWEIGHT*numchild2 + MOMWEIGHT*numchild3, data = dem_health_surv, family = binomial)
+
+summary(mlogr_inter_v2)
+```
+```{r}
+mlogr_inter_v3 <- glm(HW5_ltn2 ~ MOMWEIGHT + numchild2 + numchild3 + MOMAGE +  momedu0 + momedu1 + wealth1 + wealth2 + wealth3 + wealth4 +  MOMWEIGHT*numchild2 + MOMWEIGHT*numchild3, data = dem_health_surv, family = binomial)
+
+summary(mlogr_inter_v3)
+```
+```{r}
+mlogr_inter_v4 <- glm(HW5_ltn2 ~ MOMWEIGHT + numchild2 + numchild3 + MOMAGE +  momedu0 + momedu1 +  MOMWEIGHT*numchild2 + MOMWEIGHT*numchild3 + wealth1 + wealth2 + wealth3 + wealth4, data = dem_health_surv, family = binomial)
+summary(mlogr_inter_v4)
+anova(mlogr_inter_v4, test="Chisq")
+```
+```{r}
+hl1 <- hoslem.test(dem_health_surv$HW5_ltn2, fitted(mlogr_inter_v4), g= 50)
+hl1
+cbind(hl1$observed, hl1$expected)
+```
+```{r}
+mlogr_inter_v4_probs <- predict(mlogr_inter_v4, type = "response")
+mlogr_inter_v4_pred <- ifelse(mlogr_inter_v4_probs > 0.5, "Pred Malnourished","Pred Not Malnourished")
+table(mlogr_inter_v4_pred, dem_health_surv$HW5_ltn2)
+```
+
+
+###Testing Hosmer Lemeshow test without momweight and wealthind
+```{r}
+mlogr_without_mw_and_wealth <- glm(HW5_ltn2 ~ MOMAGE + momedu0 + momedu1 + rural + numchild2 + numchild3 + bf1 + bf2 + bf3, family = binomial, data = dem_health_surv)
+summary(mlogr_without_mw_and_wealth)
+hl1 <- hoslem.test(dem_health_surv$HW5_ltn2, fitted(mlogr_without_mw_and_wealth), g= 10)
+hl1
+cbind(hl1$observed, hl1$expected)
+anova(mlogr_without_mw_and_wealth, test = "Chisq")
+
+mlogr_without_mw_and_wealth_probs <- predict(mlogr_without_mw_and_wealth, type = "response")
+mlogr_without_mw_and_wealth_pred <- ifelse(mlogr_without_mw_and_wealth_probs > 0.5, "Pred Malnourished","Pred Not Malnourished")
+table(mlogr_without_mw_and_wealth_pred, dem_health_surv$HW5_ltn2)
+
+```
+###marginal effects of numchild
+```{r}
+plot(predict(glm(HW5_ltn2 ~ MOMWEIGHT + numchild2 + numchild3,data = dem_health_surv, family= binomial), type = "response") ~ MOMWEIGHT, data = dem_health_surv, ylab = "predicted probabilities")
+plot(predict(mlogr_bw_model_v3, type = "response") ~ MOMWEIGHT, data = dem_health_surv, ylab = "predicted probabilities")
+```
+```{r}
+#Calculate marginal effects
+me_dataset <- dem_health_surv
+me_dataset$d_MOMWEIGHT <- mlogr_inter_v4_probs * (1-mlogr_inter_v4_probs) * (-0.105527)
+me_dataset$d_MOMAGE <- mlogr_inter_v4_probs * (1-mlogr_inter_v4_probs) * (-0.027911)
+me_dataset$d_momedu0 <- mlogr_inter_v4_probs * (1-mlogr_inter_v4_probs) * (0.257753)
+me_dataset$d_momedu1 <- mlogr_inter_v4_probs * (1-mlogr_inter_v4_probs) * (0.368120)
+me_dataset$d_wealth1 <- mlogr_inter_v4_probs * (1-mlogr_inter_v4_probs) * (0.271465)
+me_dataset$d_wealth2 <- mlogr_inter_v4_probs * (1-mlogr_inter_v4_probs) * (-0.065914)
+me_dataset$d_wealth3 <- mlogr_inter_v4_probs * (1-mlogr_inter_v4_probs) * (-0.030788)
+me_dataset$d_wealth4 <- mlogr_inter_v4_probs * (1-mlogr_inter_v4_probs) * (-0.110240)
+mean(me_dataset$d_MOMWEIGHT[me_dataset$LIVCHN==1])
+mean(me_dataset$d_MOMWEIGHT[me_dataset$LIVCHN==2])
+mean(me_dataset$d_MOMWEIGHT[me_dataset$LIVCHN==3])
+```
