@@ -99,14 +99,17 @@ pairs(data.reg) # Scatterplot matrix between all variables in the dataset
 model.1 <- lm(mathatt2 ~ 1) 
 summary(model.1)
 predict.lm(model.1,interval = "confidence", level = 0.95)[1,]
+confint(model.1, level = 0.95)
 ###### Model 2
 model.2 <- lm(mathatt2 ~ curric)
 summary(model.2)
 anova(model.2)
+AIC(model.1)
+AIC(model.2)
 #E(mathatt2 | curric) = 13.09 + 0.08curric 
 # std.err = 3.2490 for intercept and 0.01566 for parameter
 #regresion line is significant to 99.9%
-#41.63% of variation can be explained using this model
+#43.17% of variation can be explained using this model
 # for every 1 unit curric increases, mathatt2 goes up by 0.08
 
 dev.off()
