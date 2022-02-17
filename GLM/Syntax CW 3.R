@@ -44,13 +44,23 @@ exp(mod.siblings$coefficients[2])
 
 # Model including both the sibling and weight variables
 mod.sw <- glm(words~siblings+weight, family="poisson")
-summary(mod.sw)
+sum_mod.sw <- summary(mod.sw)
 anova(mod.siblings, mod.sw, test="LRT")
 
 #profile likelihood
 confint(mod.sw)
 
 plot(mod.sw)
+
+exp(mod.sw$coefficients[1])
+exp(mod.sw$coefficients[2])
+exp(mod.sw$coefficients[3])
+exp(predict(mod.sw, data.frame(siblings = c(0,0), weight = c(50,75))))
+exp(mod.sw$coefficients[1] + mod.sw$coefficients[3] * 50)
+exp(mod.sw$coefficients[1] + mod.sw$coefficients[3] * 75)
+
+exp(mod.sw$coefficients[2]) - qnorm(0.05/2, lower.tail = FALSE) * sum_mod.sw$coefficients[2,2]
+exp(mod.sw$coefficients[2]) + qnorm(0.05/2, lower.tail = FALSE) * sum_mod.sw$coefficients[2,2]
 
 ########################################################
 # 2.2 Heart valve example
@@ -75,7 +85,7 @@ attach(Table)
 #model age.valve
 mod.age.valve <- glm(deaths ~ valve + age + offset(log(exposure)), 
                        family = "poisson")
-
+summary(mod.age.valve)
 #expected death counts
 predict(mod.age.valve, type="response")
 
@@ -90,15 +100,15 @@ summary(mod.age.valve) # The residual deviance is the L^2 statistic
 1-pchisq(3.2225, 1)
 
 # To calculate the X^2 statistic, sum the squares of the Pearson residuals
-sum(resid(heart.valve.fit, type = "pearson")^2)
+sum(resid(mod.age.valve, type = "pearson")^2)
 1-pchisq(3.115138, 1)
 
 ###
 
 #model valve
-mod.valve <- glm(deaths ~ valve + offset(log(exposure)), 
+heart.valve <- glm(deaths ~ valve + offset(log(exposure)), 
                  family = "poisson")
-summary(mod.valve)
+summary(heart.valve)
 1-pchisq(9.8857, 2)
 
 #model age

@@ -11,7 +11,7 @@
 # 1. BINARY LOGISTIC REGRESSION 
 ########################################################
 ########################################################
-
+haven::read_stata("GLM/logistic.dat")
 data=read.table("GLM/logistic.dat",header=T,
                 colClasses = c(rep("factor",3),"numeric"))
 ###colClasses indicates the type of the variable
