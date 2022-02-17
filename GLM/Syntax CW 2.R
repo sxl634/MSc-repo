@@ -12,8 +12,7 @@
 ########################################################
 ########################################################
 
-setwd("...")
-data=read.table("logistic.dat",header=T,
+data=read.table("GLM/logistic.dat",header=T,
                 colClasses = c(rep("factor",3),"numeric"))
 ###colClasses indicates the type of the variable
 
@@ -29,6 +28,7 @@ head(data)
 mod0 <- glm(vs2gp~1, family="binomial", data=data)
 summary(mod0)
 
+
 #fitted probabilities for all individuals
 fitted(mod0)
 #or given that it only contains an intercept
@@ -37,25 +37,69 @@ predict(mod0, newdata=data.frame(1), type="response")
 mod1 <- glm(vs2gp~hgsex, family="binomial", data=data)
 summary(mod1)
 
+exp(-1.03279+0.83474)/(1+exp(-1.03279+0.83474))
+exp(-1.03279+0*0.83474)/(1+exp(-1.03279+0*0.83474))
+exp(0.83474)
+#deviance for this model = 7911.0
+#It is better than null model, but don't know scale as it is not grouped data
+
+mod1prob <- data
+mod1$predprob <- fitted(mod1)
 ########################################################
 #Adding explanatory variables
 ########################################################
 
 mod2 <- glm(vs2gp~hgsex+hlstat, family="binomial", data=data)
-summary(mod2)
-
+summ_mod2 <- summary(mod2)
+summ_mod2
+#H0 is that including hlstat does not improve the model and the deviance is not significantly different
+#H1 is that including hlstat does improve the odel and the deviance is statistically significantly lower
 anova(mod1,mod2, test = "LRT")
+
+sprintf(1-pchisq(7911.0-6707.3,4), fmt = '%#.20f')
+
+#intercept
+exp(summ_mod2$coefficients[1,1])
+#Female
+exp(summ_mod2$coefficients[2,1])
+#Good
+exp(summ_mod2$coefficients[3,1])
+#average
+exp(summ_mod2$coefficients[4,1])
+#poor
+exp(summ_mod2$coefficients[5,1])
+#v. poor
+exp(summ_mod2$coefficients[6,1])
+
+mod2prob <- data
+mod2prob$predprob <- fitted(mod2)
+
+exp(summ_mod2$coefficients[1,1] + summ_mod2$coefficients[2,1] + summ_mod2$coefficients[3,1]) / (1 + exp(summ_mod2$coefficients[1,1] + summ_mod2$coefficients[2,1] + summ_mod2$coefficients[3,1]))
+
+mod2a <- glm(vs2gp~hgsex+hlstat+linc, family="binomial", data=data)
+summ_mod2a <- summary(mod2a)
+summ_mod2a
+
+anova(mod2,mod2a, test = "LRT")
+#keep linc at 5% significance
+
 
 #to obtain all fitted probabilities
 #new dataset with all possible covariate patterns
 newdata <- expand.grid(levels(data$hlstat),levels(data$hgsex)) 
 colnames(newdata) <- c("hlstat","hgsex")
+newdata$logit <- predict(mod2,newdata, type = "link")
 newdata$prob <- predict(mod2,newdata, type = "response")
 newdata
+test <- data
+test$logit <- predict(mod2,test, type = "link")
+test$prob <- predict(mod2,test, type = "response")
+unique(test[,c(2:3,5:ncol(test))]) |> arrange(hgsex, hlstat)
 
 mod3 <- glm(vs2gp~hgsex+hlstat+linc, family="binomial", data=data)
 summary(mod3)
 anova(mod2, mod3, test="LRT")
+sprintf(1-pchisq(6707.3-6698.2,1), fmt = '%#.6f')
 
 ########################################################
 #Diagnostics and summary of predictive power
@@ -138,8 +182,13 @@ library(VGAM)
 
 #empty model
 mult0<-vglm(hlstat~1,family=multinomial(refLevel = 1), data=data)
-summary(mult0)
+mult0_summ <- summary(mult0)
 
+#log(p2/p1) = 0.66054
+#log(p3/p1) = -0.19235 
+#log(p4/p1) = -1.50667
+#log(p5/p1) = -2.98478
+exp(coef(mult0))
 #notice the presence of Hauck-Donner effect
 #predicted odds under this model
 exp(predict(mult0,data.frame(1)))
