@@ -300,8 +300,8 @@ summary( fit.sa.da )
 ######################################
 # Homogeneous association model
 ######################################
-
-fit.all.pairs <- glm( count ~ (sex + dept + admit)^2, family = poisson, data=berk.data)
+test <- within(berk.data, dept <- relevel(dept, ref = 5))
+fit.all.pairs <- glm( count ~ (sex + dept + admit)^2, family = poisson, data=test)
 summary(fit.all.pairs)
 
 
@@ -309,8 +309,8 @@ summary(fit.all.pairs)
 # Saturated model
 ######################################
 
-
-fit.saturated<- glm(count ~ dept*sex*admit, family = poisson, data=berk.data)
+test <- within(berk.data, dept <- relevel(dept, ref = 1))
+fit.saturated<- glm(count ~ relevel(dept, ref = 2)*sex*admit, family = poisson, data=test)
 summary( fit.saturated)
 
 fitted.saturated<- array(fitted(fit.saturated), dim = c(2,2,6), dimnames=dimnames(berk.table))
